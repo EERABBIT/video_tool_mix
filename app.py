@@ -7,7 +7,12 @@ import os
 import json
 import asyncio
 import time
+import platform
 from pathlib import Path
+
+# Windows上的asyncio兼容性设置
+if platform.system() == 'Windows':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 import uuid
@@ -196,7 +201,10 @@ def text_to_image():
         return jsonify({'error': str(e)}), 500
     
     finally:
-        loop.close()
+        try:
+            loop.close()
+        except:
+            pass  # 忽略Windows上的关闭循环错误
 
 @app.route('/api/image-to-video', methods=['POST'])
 def image_to_video():
@@ -255,7 +263,10 @@ def image_to_video():
         return jsonify({'error': str(e)}), 500
     
     finally:
-        loop.close()
+        try:
+            loop.close()
+        except:
+            pass  # 忽略Windows上的关闭循环错误
 
 
 @app.route('/api/text-to-video', methods=['POST'])
@@ -305,7 +316,10 @@ def text_to_video():
         return jsonify({'error': str(e)}), 500
     
     finally:
-        loop.close()
+        try:
+            loop.close()
+        except:
+            pass  # 忽略Windows上的关闭循环错误
 
 @app.route('/assets/<path:filename>')
 def serve_assets(filename):
