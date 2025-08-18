@@ -1,0 +1,78 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+video_tool/
+conda-env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project specific
+uploads/
+output/
+downloads/
+assets/videos/*.mp4
+assets/images/*.png
+assets/images/*.jpg
+*.log
+
+# API Keys (安全考虑)
+config.py
+.env
+*.key
+
+# Test files
+test_*.html
+verify_*.html
+test_api.py
+test_fixes.md
+
+# Large media files (所有视频文件都不上传)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.flv
+*.wmv
+*.m4v
+
+# 图片文件（如果不想上传）
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+
+# Temporary files
+tmp/
+temp/
+*.tmp
