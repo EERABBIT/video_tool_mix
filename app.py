@@ -20,6 +20,8 @@ import uuid
 from qwen_t2i_flash import QwenAPITester  # 文生图API
 from qwen_i2v_flash import QwenI2VFlashAPI  # 图生视频API
 from qwen_t2v_plus import QwenT2VPlusAPI  # 文生视频API
+from qwen_keyframe_plus import QwenKeyframePlusAPI  # 首尾帧视频API
+from qwen_image_edit import QwenImageEditAPI  # 图片编辑API
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
@@ -76,6 +78,8 @@ def copy_to_assets(source_path, file_type='image'):
 text_to_image_api = QwenAPITester()
 image_to_video_api = QwenI2VFlashAPI()
 text_to_video_api = QwenT2VPlusAPI()
+keyframe_video_api = QwenKeyframePlusAPI()
+image_edit_api = QwenImageEditAPI()
 
 @app.route('/')
 def index():
@@ -321,6 +325,138 @@ def text_to_video():
         except:
             pass  # 忽略Windows上的关闭循环错误
 
+@app.route('/api/keyframe-to-video', methods=['POST'])
+def keyframe_to_video():
+    """首尾帧生成视频"""
+    data = request.json
+    
+    first_frame_path = data.get('first_frame_path', '')
+    last_frame_path = data.get('last_frame_path', '')
+    prompt = data.get('prompt', '')
+    resolution = data.get('resolution', '720P')
+    prompt_extend = data.get('prompt_extend', True)
+    
+    if not first_frame_path or not last_frame_path:
+        return jsonify({'error': '请选择首帧和尾帧图片'}), 400
+    
+    # 转换为绝对路径
+    if first_frame_path.startswith('/'):
+        first_frame_path = first_frame_path[1:]
+    if last_frame_path.startswith('/'):
+        last_frame_path = last_frame_path[1:]
+    
+    full_first_path = Path(first_frame_path).resolve()
+    full_last_path = Path(last_frame_path).resolve()
+    
+    if not full_first_path.exists():
+        return jsonify({'error': f'首帧图片不存在: {first_frame_path}'}), 400
+    if not full_last_path.exists():
+        return jsonify({'error': f'尾帧图片不存在: {last_frame_path}'}), 400
+    
+    print(f"首尾帧视频生成请求:")
+    print(f"  首帧: {full_first_path}")
+    print(f"  尾帧: {full_last_path}")
+    print(f"  提示词: {prompt}")
+    print(f"  分辨率: {resolution}")
+    
+    # 异步执行
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        result = loop.run_until_complete(
+            keyframe_video_api.generate_keyframe_video(
+                first_frame_path=str(full_first_path),
+                last_frame_path=str(full_last_path),
+                prompt=prompt,
+                resolution=resolution,
+                prompt_extend=prompt_extend
+            )
+        )
+        
+        # 如果生成成功，复制到assets
+        if result.get('status') == 'success' and result.get('local_path'):
+            asset_path = copy_to_assets(result['local_path'], 'video')
+            if asset_path:
+                result['local_path'] = str(Path(asset_path).relative_to(Path.cwd()))
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        try:
+            loop.close()
+        except:
+            pass  # 忽略Windows上的关闭循环错误
+
+@app.route('/api/image-edit', methods=['POST'])
+def image_edit():
+    """图片编辑"""
+    data = request.json
+    
+    image_path = data.get('image_path', '')
+    edit_instruction = data.get('edit_instruction', '')
+    negative_prompt = data.get('negative_prompt', '')
+    watermark = data.get('watermark', False)
+    
+    if not image_path:
+        return jsonify({'error': '请选择要编辑的图片'}), 400
+    
+    if not edit_instruction:
+        return jsonify({'error': '请输入编辑指令'}), 400
+    
+    # 转换为绝对路径
+    if image_path.startswith('/'):
+        image_path = image_path[1:]
+    
+    full_image_path = Path(image_path).resolve()
+    if not full_image_path.exists():
+        return jsonify({'error': f'图片文件不存在: {image_path}'}), 400
+    
+    print(f"图片编辑请求:")
+    print(f"  图片: {full_image_path}")
+    print(f"  编辑指令: {edit_instruction}")
+    print(f"  负向提示: {negative_prompt}")
+    print(f"  水印: {watermark}")
+    
+    # 异步执行
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        result = loop.run_until_complete(
+            image_edit_api.edit_image(
+                image_path=str(full_image_path),
+                edit_instruction=edit_instruction,
+                negative_prompt=negative_prompt if negative_prompt else None,
+                watermark=watermark
+            )
+        )
+        
+        # 如果编辑成功，复制到assets
+        if result.get('status') == 'success' and result.get('local_path'):
+            asset_path = copy_to_assets(result['local_path'], 'image')
+            if asset_path:
+                # 确保返回相对路径
+                try:
+                    result['local_path'] = str(Path(asset_path).relative_to(Path.cwd()))
+                except ValueError:
+                    # 如果路径转换失败，直接使用相对路径
+                    result['local_path'] = str(Path(asset_path)).replace(str(Path.cwd()) + '/', '')
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        try:
+            loop.close()
+        except:
+            pass  # 忽略Windows上的关闭循环错误
+
 @app.route('/assets/<path:filename>')
 def serve_assets(filename):
     """提供素材文件"""
@@ -341,6 +477,6 @@ if __name__ == '__main__':
     print("📁 上传目录:", UPLOAD_FOLDER.absolute())
     print("📁 输出目录:", OUTPUT_FOLDER.absolute())
     print("📁 素材目录:", ASSETS_FOLDER.absolute())
-    print("🌐 访问地址: http://localhost:5000")
+    print("🌐 访问地址: http://localhost:30001")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=30001)

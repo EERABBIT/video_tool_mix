@@ -433,10 +433,34 @@
             margin: 10px 0;
         }
 
+        .form-info {
+            background: #f0f8ff;
+            border: 1px solid #b0d4f1;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .form-info p {
+            margin: 5px 0;
+            color: #495057;
+            font-size: 14px;
+        }
+        
         .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
             height: 100%;
-            background: #007bff;
-            transition: width 0.3s;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            transition: width 0.3s ease;
+            border-radius: 10px;
         }
 
         .loading {
@@ -519,6 +543,8 @@
                 <button class="tab active" onclick="switchTab('text-to-image', '通义万相2.2-文生图-Flash')">🎨 文生图</button>
                 <button class="tab" onclick="switchTab('image-to-video', '通义万相2.2-图生视频-Flash')">🎬 图生视频</button>
                 <button class="tab" onclick="switchTab('text-to-video', '通义万相2.2-文生视频-Plus')">🎥 文生视频</button>
+                <button class="tab" onclick="switchTab('keyframe-to-video', '通义万相2.1-首尾帧-Plus')">🎞️ 首尾帧视频</button>
+                <button class="tab" onclick="switchTab('image-edit', '通义千问图片编辑')">🖼️ 图片编辑</button>
             </div>
 
             <!-- 内容区域 -->
@@ -641,6 +667,85 @@
                     </form>
                 </div>
 
+                <!-- 首尾帧视频 -->
+                <div id="keyframe-to-video" class="tab-content">
+                    <h3>🎞️ 首尾帧视频生成</h3>
+                    <form id="keyframeToVideoForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>首帧图片</label>
+                                <input type="text" id="kf2v-first-frame" name="first_frame_path" placeholder="从左侧素材库选择首帧图片" readonly>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="clearFirstFrame()">清除</button>
+                            </div>
+                            <div class="form-group">
+                                <label>尾帧图片</label>
+                                <input type="text" id="kf2v-last-frame" name="last_frame_path" placeholder="从左侧素材库选择尾帧图片" readonly>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="clearLastFrame()">清除</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="kf2v-prompt">过渡动画提示词</label>
+                            <textarea id="kf2v-prompt" name="prompt" placeholder="描述从首帧到尾帧的过渡动画效果...例如：流畅的过渡动画，自然的运动轨迹"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="kf2v-resolution">分辨率</label>
+                                <select id="kf2v-resolution" name="resolution">
+                                    <option value="720P" selected>720P (1280×720)</option>
+                                    <option value="1080P">1080P (1920×1080)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="kf2v-extend">
+                                    <input type="checkbox" id="kf2v-extend" name="prompt_extend" checked>
+                                    启用提示词扩展
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-info">
+                            <p>⏱️ 预计生成时间：7-10分钟</p>
+                            <p>💡 提示：选择两张相关联的图片作为首尾帧，AI将生成平滑的过渡动画</p>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="kf2vSubmitBtn">生成视频</button>
+                        <div id="kf2vProgress" style="display:none; margin-top: 20px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="kf2vProgressBar" style="width: 0%"></div>
+                            </div>
+                            <p id="kf2vStatus">正在提交任务...</p>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 图片编辑 -->
+                <div id="image-edit" class="tab-content">
+                    <h3>🖼️ 图片编辑</h3>
+                    <form id="imageEditForm">
+                        <div class="form-group">
+                            <label>选择图片</label>
+                            <input type="text" id="ie-image-path" name="image_path" placeholder="从左侧素材库选择要编辑的图片" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="ie-edit-instruction">编辑指令 *</label>
+                            <textarea id="ie-edit-instruction" name="edit_instruction" placeholder="描述你想对图片进行的修改...例如：让图片更加明亮，增强色彩饱和度" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="ie-negative-prompt">负向提示词</label>
+                            <textarea id="ie-negative-prompt" name="negative_prompt" placeholder="描述不想要的元素...例如：模糊，低质量，噪点"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="ie-watermark">
+                                <input type="checkbox" id="ie-watermark" name="watermark">
+                                添加水印
+                            </label>
+                        </div>
+                        <div class="form-info">
+                            <p>⏱️ 预计生成时间：1-2分钟</p>
+                            <p>💡 提示：请使用清晰的指令描述你想要的编辑效果，如颜色调整、风格转换、细节修改等</p>
+                        </div>
+                        <button type="submit" class="btn btn-primary">编辑图片</button>
+                    </form>
+                </div>
+
                 <!-- 结果显示区域 -->
                 <div class="result-area">
                     <h4>生成结果</h4>
@@ -697,11 +802,23 @@
             document.getElementById('textToImageForm').addEventListener('submit', handleTextToImage);
             document.getElementById('imageToVideoForm').addEventListener('submit', handleImageToVideo);
             document.getElementById('textToVideoForm').addEventListener('submit', handleTextToVideo);
+            document.getElementById('keyframeToVideoForm').addEventListener('submit', handleKeyframeToVideo);
+            document.getElementById('imageEditForm').addEventListener('submit', handleImageEdit);
             
             // 动作强度滑块
             document.getElementById('t2v-motion').addEventListener('input', function(e) {
                 document.getElementById('motionValue').textContent = e.target.value;
             });
+        }
+        
+        // 清除首帧
+        function clearFirstFrame() {
+            document.getElementById('kf2v-first-frame').value = '';
+        }
+        
+        // 清除尾帧
+        function clearLastFrame() {
+            document.getElementById('kf2v-last-frame').value = '';
         }
 
         // 切换标签页
@@ -859,6 +976,30 @@
                 document.getElementById('i2v-image-path').value = assetPath;
             }
             
+            // 图片编辑选择逻辑
+            if (currentTab === 'image-edit' && asset.type === 'image') {
+                document.getElementById('ie-image-path').value = assetPath;
+            }
+            
+            // 首尾帧视频选择逻辑
+            if (currentTab === 'keyframe-to-video' && asset.type === 'image') {
+                const firstFrameInput = document.getElementById('kf2v-first-frame');
+                const lastFrameInput = document.getElementById('kf2v-last-frame');
+                
+                // 如果首帧为空，填充首帧
+                if (!firstFrameInput.value) {
+                    firstFrameInput.value = assetPath;
+                }
+                // 如果首帧已填充但尾帧为空，填充尾帧
+                else if (!lastFrameInput.value) {
+                    lastFrameInput.value = assetPath;
+                }
+                // 如果两个都已填充，替换尾帧
+                else {
+                    lastFrameInput.value = assetPath;
+                }
+            }
+            
             // 在结果框中显示选中的素材
             showAssetInResult(asset);
         }
@@ -1014,6 +1155,118 @@
                 }
             } catch (error) {
                 hideLoading();
+                showError(`生成失败: ${error.message}`);
+            }
+        }
+        
+        // 处理图片编辑
+        async function handleImageEdit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            // 处理checkbox值
+            data.watermark = document.getElementById('ie-watermark').checked;
+            
+            if (!data.image_path) {
+                showError('请先选择要编辑的图片');
+                return;
+            }
+            
+            if (!data.edit_instruction) {
+                showError('请输入编辑指令');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/image-edit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                hideLoading();
+                
+                if (result.status === 'success') {
+                    showResults([result.local_path], 'image');
+                    showSuccess('图片编辑成功!');
+                    await loadAssets(); // 刷新素材库
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                hideLoading();
+                showError(`编辑失败: ${error.message}`);
+            }
+        }
+        
+        // 处理首尾帧视频生成
+        async function handleKeyframeToVideo(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            // 处理checkbox值
+            data.prompt_extend = document.getElementById('kf2v-extend').checked;
+            
+            if (!data.first_frame_path || !data.last_frame_path) {
+                showError('请选择首帧和尾帧图片');
+                return;
+            }
+            
+            if (!data.prompt) {
+                data.prompt = '创建流畅的过渡动画，自然的运动轨迹';
+            }
+            
+            // 显示进度条
+            const progressDiv = document.getElementById('kf2vProgress');
+            const progressBar = document.getElementById('kf2vProgressBar');
+            const statusText = document.getElementById('kf2vStatus');
+            const submitBtn = document.getElementById('kf2vSubmitBtn');
+            
+            progressDiv.style.display = 'block';
+            submitBtn.disabled = true;
+            showLoading();
+            
+            try {
+                // 提交任务
+                statusText.textContent = '正在提交任务...';
+                progressBar.style.width = '10%';
+                
+                const response = await fetch('/api/keyframe-to-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // 模拟进度更新（实际已在后端完成轮询）
+                    statusText.textContent = '视频生成中...';
+                    progressBar.style.width = '100%';
+                    
+                    hideLoading();
+                    progressDiv.style.display = 'none';
+                    submitBtn.disabled = false;
+                    
+                    showResults([result.local_path], 'video');
+                    showSuccess('首尾帧视频生成成功!');
+                    await loadAssets(); // 刷新素材库
+                } else {
+                    throw new Error(result.error || '生成失败');
+                }
+            } catch (error) {
+                hideLoading();
+                progressDiv.style.display = 'none';
+                submitBtn.disabled = false;
                 showError(`生成失败: ${error.message}`);
             }
         }
