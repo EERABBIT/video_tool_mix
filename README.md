@@ -58,6 +58,27 @@ video_tool_mix/
 
 ## 快速开始
 
+### 一键设置（推荐）
+```bash
+# 克隆项目
+git clone https://github.com/ramaalpaca/video_tool_mix.git
+cd video_tool_mix
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 运行设置脚本
+python setup.py
+```
+
+设置脚本会自动：
+- 创建.env配置文件
+- 创建必要目录
+- 检查依赖和配置
+- 提供API密钥获取指引
+
+### 手动设置
+
 ### 环境要求
 - Python 3.8+
 - Flask
@@ -70,17 +91,39 @@ video_tool_mix/
 pip install -r requirements.txt
 ```
 
-### 配置API密钥
+### 配置API密钥（重要！）
+
+**⚠️ 必须配置API密钥才能使用Agent功能**
+
 1. 复制环境变量示例文件：
 ```bash
 cp .env.example .env
 ```
 
 2. 编辑 `.env` 文件，添加你的API密钥：
+```env
+# 必需：Dashscope API密钥（免费）
+DASHSCOPE_API_KEY=sk-your_dashscope_api_key_here
+
+# 可选：Claude API密钥（优先使用）
+ANTHROPIC_API_KEY=your_claude_api_key_here
+
+# 可选：OpenAI API密钥
+OPENAI_API_KEY=your_openai_api_key_here
 ```
-DASHSCOPE_API_KEY=your_dashscope_api_key
-ANTHROPIC_API_KEY=your_claude_api_key  # 可选
-```
+
+#### 获取API密钥：
+
+**Dashscope（推荐，免费）：**
+1. 访问 [阿里云百炼平台](https://bailian.console.aliyun.com/)
+2. 注册并登录阿里云账号
+3. 进入"API-KEY管理"创建新的API Key
+4. 复制API Key到 `.env` 文件中
+
+**Claude（可选，性能更好）：**
+1. 访问 [Anthropic Console](https://console.anthropic.com/)
+2. 创建账号并获取API Key
+3. 复制到 `.env` 文件中
 
 ### 启动应用
 ```bash
@@ -155,6 +198,40 @@ POST /api/generate/{task_type}
 - **AI集成**: 通义千问系列模型
 - **LLM**: Claude/通义千问大语言模型
 - **文件存储**: 本地文件系统
+
+## 常见问题
+
+### ❌ "story agent is not available" 错误
+**原因**: 没有配置LLM API密钥，导致Agent无法初始化
+
+**解决方案**:
+1. 确保已配置 `DASHSCOPE_API_KEY` 在 `.env` 文件中
+2. 重启应用 `python web/app.py`
+3. 检查控制台是否显示 "Using Dashscope LLM" 或 "Using Claude LLM"
+
+### ❌ API请求失败
+**原因**: API密钥无效或网络连接问题
+
+**解决方案**:
+1. 验证API密钥是否正确
+2. 检查网络连接
+3. 确认API密钥有足够的配额
+
+### ❌ 本地T2V模型连接失败
+**原因**: 本地模型服务未启动或地址错误
+
+**解决方案**:
+1. 确认本地T2V服务已启动（默认 `http://192.168.3.4:8888`）
+2. 修改 `api/qwen_local_t2v.py` 中的 `base_url` 参数
+
+### 📱 启动检查清单
+启动应用时，控制台应显示：
+```
+Using Dashscope LLM  # 或 Using Claude LLM
+ * Running on http://127.0.0.1:30001
+```
+
+如果看到 "Warning: No LLM provider available"，说明API密钥配置有问题。
 
 ## 开发计划
 

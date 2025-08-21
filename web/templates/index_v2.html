@@ -1073,15 +1073,21 @@
                     html += `<div class="tree-file" onclick="previewFile('${projectId}', 'video', 'assets/videos/${vid}')" oncontextmenu="showRenameMenu(event, '${projectId}', 'assets/videos/${vid}', '${vid}')">${vid}</div>`;
                 });
             }
+            if (structure.assets.audios.length > 0) {
+                html += `<div class="tree-folder" style="padding-left:12px">🎵 音频 <span class="file-count">(${structure.assets.audios.length})</span></div>`;
+                structure.assets.audios.forEach(aud => {
+                    html += `<div class="tree-file" onclick="previewFile('${projectId}', 'audio', 'assets/audios/${aud}')" oncontextmenu="showRenameMenu(event, '${projectId}', 'assets/audios/${aud}', '${aud}')">${aud}</div>`;
+                });
+            }
             
             // Prompts
             html += '<div class="tree-folder">📝 Prompts</div>';
-            ['story', 'storyboard', 'characters'].forEach(type => {
+            ['story', 'storyboard', 'characters', 'scenes', 'shots', 'videos'].forEach(type => {
                 if (structure.prompts[type].length > 0) {
-                    const typeName = {story: '故事', storyboard: '分镜', characters: '角色'}[type];
+                    const typeName = {story: '故事', storyboard: '分镜', characters: '角色', scenes: '场景', shots: '镜头', videos: '视频'}[type];
                     html += `<div class="tree-folder" style="padding-left:12px">${typeName} <span class="file-count">(${structure.prompts[type].length})</span></div>`;
                     structure.prompts[type].forEach(file => {
-                        html += `<div class="tree-file" onclick="previewPrompt('${projectId}', '${type}', '${file}')">${file}</div>`;
+                        html += `<div class="tree-file" onclick="previewPrompt('${projectId}', '${type}', '${file}')" oncontextmenu="showRenameMenu(event, '${projectId}', 'prompts/${type}/${file}', '${file}')">${file}</div>`;
                     });
                 }
             });
@@ -1092,6 +1098,12 @@
                 html += `<div class="tree-folder" style="padding-left:12px">参考图 <span class="file-count">(${structure.outputs.references.length})</span></div>`;
                 structure.outputs.references.forEach(img => {
                     html += `<div class="tree-file" onclick="previewFile('${projectId}', 'image', 'outputs/references/${img}')" oncontextmenu="showRenameMenu(event, '${projectId}', 'outputs/references/${img}', '${img}')">${img}</div>`;
+                });
+            }
+            if (structure.outputs.storyboards.length > 0) {
+                html += `<div class="tree-folder" style="padding-left:12px">故事板 <span class="file-count">(${structure.outputs.storyboards.length})</span></div>`;
+                structure.outputs.storyboards.forEach(sb => {
+                    html += `<div class="tree-file" onclick="previewFile('${projectId}', 'image', 'outputs/storyboards/${sb}')" oncontextmenu="showRenameMenu(event, '${projectId}', 'outputs/storyboards/${sb}', '${sb}')">${sb}</div>`;
                 });
             }
             if (structure.outputs.videos.length > 0) {
