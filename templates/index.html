@@ -622,6 +622,13 @@
                     <h3>🎥 文生视频</h3>
                     <form id="textToVideoForm">
                         <div class="form-group">
+                            <label for="t2v-model">模型选择</label>
+                            <select id="t2v-model" name="model">
+                                <option value="qwen-t2v-plus">通义万相2.2-文生视频-Plus</option>
+                                <option value="local-t2v">本地T2V模型</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label for="t2v-prompt">提示词</label>
                             <textarea id="t2v-prompt" name="prompt" placeholder="描述你想要的视频内容..."></textarea>
                         </div>
@@ -662,6 +669,9 @@
                                     <option value="624*624">624×624 (1:1 小尺寸)</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="form-info" id="t2v-model-info">
+                            <p id="t2v-info-content">⏱️ 预计生成时间：3-5分钟 | 🌐 使用通义万相云端服务</p>
                         </div>
                         <button type="submit" class="btn btn-primary">生成视频</button>
                     </form>
@@ -809,6 +819,59 @@
             document.getElementById('t2v-motion').addEventListener('input', function(e) {
                 document.getElementById('motionValue').textContent = e.target.value;
             });
+            
+            // 文生视频模型选择
+            document.getElementById('t2v-model').addEventListener('change', function(e) {
+                updateT2VModelInfo(e.target.value);
+            });
+        }
+        
+        // 更新文生视频模型信息
+        function updateT2VModelInfo(model) {
+            const infoContent = document.getElementById('t2v-info-content');
+            const resolutionSelect = document.getElementById('t2v-resolution');
+            
+            if (model === 'local-t2v') {
+                infoContent.innerHTML = '⏱️ 预计生成时间：30秒-2分钟 | 🖥️ 使用本地T2V服务 | 📡 需要局域网连接<br>⚠️ 注意：分辨率将自动调整为64的倍数';
+                
+                // 为本地模型推荐的分辨率（都是64的倍数）
+                const localResolutions = [
+                    { value: '512*512', text: '512×512 (1:1 标准)' },
+                    { value: '768*512', text: '768×512 (3:2 横屏)' },
+                    { value: '1024*576', text: '1024×576 (16:9 宽屏)' },
+                    { value: '576*1024', text: '576×1024 (9:16 竖屏)' },
+                    { value: '1280*768', text: '1280×768 (5:3 HD)' },
+                    { value: '1920*1088', text: '1920×1088 (16:9 Full HD)' },
+                    { value: '640*640', text: '640×640 (1:1 中等)' },
+                    { value: '448*832', text: '448×832 (9:16 手机竖屏)' },
+                    { value: '832*448', text: '832×448 (16:9 小尺寸)' },
+                    { value: '1088*1920', text: '1088×1920 (9:16 竖屏HD)' }
+                ];
+                
+                // 更新分辨率选项
+                resolutionSelect.innerHTML = '';
+                localResolutions.forEach(res => {
+                    const option = document.createElement('option');
+                    option.value = res.value;
+                    option.textContent = res.text;
+                    resolutionSelect.appendChild(option);
+                });
+                
+            } else {
+                infoContent.innerHTML = '⏱️ 预计生成时间：3-5分钟 | 🌐 使用通义万相云端服务';
+                
+                // 恢复通义万相的分辨率选项
+                resolutionSelect.innerHTML = `
+                    <option value="1920*1080" selected>1920×1080 (16:9 HD)</option>
+                    <option value="1080*1920">1080×1920 (9:16 竖屏)</option>
+                    <option value="1440*1440">1440×1440 (1:1 正方形)</option>
+                    <option value="1632*1248">1632×1248 (4:3)</option>
+                    <option value="1248*1632">1248×1632 (3:4 竖屏)</option>
+                    <option value="832*480">832×480 (16:9 小尺寸)</option>
+                    <option value="480*832">480×832 (9:16 小尺寸)</option>
+                    <option value="624*624">624×624 (1:1 小尺寸)</option>
+                `;
+            }
         }
         
         // 清除首帧
@@ -1132,6 +1195,14 @@
                 return;
             }
             
+            const selectedModel = data.model || 'qwen-t2v-plus';
+            console.log('文生视频请求:', {
+                model: selectedModel,
+                prompt: data.prompt,
+                duration: data.duration,
+                resolution: data.resolution
+            });
+            
             showLoading();
             
             try {
@@ -1148,7 +1219,7 @@
                 
                 if (result.status === 'success') {
                     showResults([result.local_path], 'video');
-                    showSuccess('视频生成成功!');
+                    showSuccess(`${selectedModel === 'local-t2v' ? '本地T2V' : '通义万相'}视频生成成功!`);
                     await loadAssets(); // 刷新素材库
                 } else {
                     showError(result.error);

@@ -22,6 +22,7 @@ from qwen_i2v_flash import QwenI2VFlashAPI  # 图生视频API
 from qwen_t2v_plus import QwenT2VPlusAPI  # 文生视频API
 from qwen_keyframe_plus import QwenKeyframePlusAPI  # 首尾帧视频API
 from qwen_image_edit import QwenImageEditAPI  # 图片编辑API
+from qwen_local_t2v import QwenLocalT2VAPI  # 本地文生视频API
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
@@ -80,6 +81,7 @@ image_to_video_api = QwenI2VFlashAPI()
 text_to_video_api = QwenT2VPlusAPI()
 keyframe_video_api = QwenKeyframePlusAPI()
 image_edit_api = QwenImageEditAPI()
+local_t2v_api = QwenLocalT2VAPI()
 
 @app.route('/')
 def index():
@@ -280,39 +282,69 @@ def text_to_video():
     
     prompt = data.get('prompt', '')
     negative_prompt = data.get('negative_prompt', '')
-    duration = data.get('duration', 5)
-    fps = data.get('fps', 30)
+    duration = int(data.get('duration', 5))
+    fps = int(data.get('fps', 30))
     resolution = data.get('resolution', '1920*1080')
     style = data.get('style', 'realistic')
-    motion_strength = data.get('motion_strength', 0.5)
+    motion_strength = float(data.get('motion_strength', 0.5))
     seed = data.get('seed')
+    if seed:
+        seed = int(seed) if seed else None
+    model = data.get('model', 'qwen-t2v-plus')  # 新增模型选择参数
     
     if not prompt:
         return jsonify({'error': '请输入提示词'}), 400
+    
+    print(f"🎥 文生视频请求:")
+    print(f"  模型: {model}")
+    print(f"  提示词: {prompt}")
+    print(f"  分辨率: {resolution}")
+    print(f"  时长: {duration}秒, 帧率: {fps}fps")
     
     # 异步执行
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     
     try:
-        result = loop.run_until_complete(
-            text_to_video_api.generate_text_to_video(
-                prompt=prompt,
-                negative_prompt=negative_prompt,
-                duration=duration,
-                fps=fps,
-                resolution=resolution,
-                style=style,
-                motion_strength=motion_strength,
-                seed=seed
+        # 根据模型选择API
+        if model == 'local-t2v':
+            result = loop.run_until_complete(
+                local_t2v_api.generate_text_to_video(
+                    prompt=prompt,
+                    negative_prompt=negative_prompt,
+                    duration=duration,
+                    fps=fps,
+                    resolution=resolution,
+                    seed=seed,
+                    style=style,
+                    motion_strength=motion_strength
+                )
             )
-        )
+        else:
+            # 默认使用通义万相T2V Plus
+            result = loop.run_until_complete(
+                text_to_video_api.generate_text_to_video(
+                    prompt=prompt,
+                    negative_prompt=negative_prompt,
+                    duration=duration,
+                    fps=fps,
+                    resolution=resolution,
+                    style=style,
+                    motion_strength=motion_strength,
+                    seed=seed
+                )
+            )
         
         # 如果生成成功，复制到assets
         if result.get('status') == 'success' and result.get('local_path'):
             asset_path = copy_to_assets(result['local_path'], 'video')
             if asset_path:
-                result['local_path'] = str(Path(asset_path).relative_to(Path.cwd()))
+                # 确保返回相对路径
+                try:
+                    result['local_path'] = str(Path(asset_path).relative_to(Path.cwd()))
+                except ValueError:
+                    # 如果路径转换失败，直接使用相对路径
+                    result['local_path'] = str(Path(asset_path)).replace(str(Path.cwd()) + '/', '')
         
         return jsonify(result)
         
