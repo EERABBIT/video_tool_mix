@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI视频生成平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* 左侧栏 - 项目结构 */
+        .left-sidebar {
+            width: 280px;
+            background: #252525;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .sidebar-header h3 {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .new-project-btn {
+            width: 100%;
+            padding: 4px;
+            margin-top: 6px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 11px;
+            height: 28px;
+        }
+        
+        .new-project-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .project-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .project-item {
+            margin-bottom: 10px;
+            background: #2a2a2a;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .project-item.active {
+            background: #333;
+            box-shadow: 0 2px 4px rgba(102,126,234,0.3);
+        }
+        
+        .project-header {
+            padding: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .project-header:hover {
+            background: #333;
+        }
+        
+        .project-name {
+            font-weight: 500;
+            color: #e0e0e0;
+        }
+        
+        .project-arrow {
+            transition: transform 0.3s;
+            color: #666;
+        }
+        
+        .project-item.expanded .project-arrow {
+            transform: rotate(90deg);
+        }
+        
+        .project-tree {
+            display: none;
+            padding: 0 12px 12px 24px;
+        }
+        
+        .project-item.expanded .project-tree {
+            display: block;
+        }
+        
+        .tree-node {
+            padding: 4px 0;
+            cursor: pointer;
+            color: #999;
+            font-size: 13px;
+        }
+        
+        .tree-node:hover {
+            color: #667eea;
+        }
+        
+        .tree-folder {
+            font-weight: 500;
+            color: #b0b0b0;
+            margin: 4px 0 2px 0;
+            font-size: 12px;
+            line-height: 1.3;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .tree-folder:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .tree-file {
+            padding-left: 16px;
+            position: relative;
+            font-size: 11px;
+            line-height: 1.3;
+            color: #888;
+            cursor: pointer;
+            margin: 1px 0;
+            padding: 2px 4px 2px 16px;
+            border-radius: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .tree-file:hover {
+            background: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+        }
+        
+        .tree-file::before {
+            content: '•';
+            position: absolute;
+            left: 6px;
+            color: #555;
+            font-size: 10px;
+        }
+        
+        .file-count {
+            color: #666;
+            font-size: 10px;
+            margin-left: 4px;
+        }
+        
+        /* 中间栏 - 控制面板 */
+        .main-content {
+            flex: 1;
+            background: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .control-tabs {
+            display: flex;
+            background: #2a2a2a;
+            border-bottom: 1px solid #333;
+            padding: 0 20px;
+        }
+        
+        .control-tab {
+            padding: 15px 20px;
+            cursor: pointer;
+            color: #999;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .control-tab:hover {
+            color: #e0e0e0;
+        }
+        
+        .control-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .control-panel {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .panel-section {
+            display: none;
+        }
+        
+        .panel-section.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b0b0b0;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: #2a2a2a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: #333;
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .param-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .param-col {
+            flex: 1;
+        }
+        
+        .param-col label {
+            display: block;
+            margin-bottom: 5px;
+            color: #b0b0b0;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .param-col input,
+        .param-col select {
+            width: 100%;
+            padding: 8px;
+            background: #2a2a2a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #3a3a3a;
+        }
+        
+        .btn-secondary:hover {
+            background: #444;
+        }
+        
+        .model-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .model-option {
+            flex: 1;
+            padding: 12px;
+            background: #2a2a2a;
+            border: 2px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .model-option:hover {
+            border-color: #555;
+        }
+        
+        .model-option.selected {
+            border-color: #667eea;
+            background: #333;
+        }
+        
+        /* 右侧栏 - 预览面板 */
+        .right-sidebar {
+            width: 400px;
+            background: #252525;
+            border-left: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .preview-header {
+            padding: 20px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #333;
+        }
+        
+        .preview-header h3 {
+            font-size: 16px;
+            color: #e0e0e0;
+        }
+        
+        .preview-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .preview-empty {
+            color: #666;
+            text-align: center;
+            margin-top: 50px;
+        }
+        
+        .preview-image {
+            width: 100%;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .preview-video {
+            width: 100%;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .preview-json {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #b0b0b0;
+            overflow-x: auto;
+        }
+        
+        .preview-text {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        .preview-title {
+            font-size: 14px;
+            color: #667eea;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .preview-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        /* 状态栏 */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+        }
+        
+        .status-text {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .status-project {
+            margin-left: auto;
+            color: #667eea;
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #333;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Agent和模型的子标签 */
+        .sub-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        .sub-tab {
+            padding: 8px 16px;
+            background: #2a2a2a;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.3s;
+        }
+        
+        .sub-tab:hover {
+            background: #333;
+            color: #e0e0e0;
+        }
+        
+        .sub-tab.active {
+            background: #333;
+            color: #667eea;
+        }
+        
+        .result-display {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .result-display pre {
+            color: #b0b0b0;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        /* 上传区域样式 */
+        .upload-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+        
+        .upload-section h5 {
+            font-size: 11px;
+            margin: 0 0 6px 0;
+            color: #bbb;
+            font-weight: 500;
+        }
+        
+        .upload-area {
+            border: 1px dashed #555;
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #1a1a1a;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #222;
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #222;
+        }
+        
+        .upload-icon {
+            font-size: 16px;
+            color: #888;
+        }
+        
+        .upload-area:hover .upload-icon {
+            color: #667eea;
+        }
+        
+        /* 素材网格样式 */
+        .assets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+        
+        .assets-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+        
+        .asset-item {
+            background: #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .asset-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .asset-preview {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 24px;
+        }
+        
+        .asset-info {
+            padding: 8px;
+        }
+        
+        .asset-name {
+            color: #e0e0e0;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .asset-type {
+            color: #666;
+            font-size: 10px;
+            margin-top: 2px;
+        }
+        
+        /* 重命名菜单样式 */
+        .rename-menu {
+            position: fixed;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 5px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            min-width: 120px;
+        }
+        
+        .rename-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            color: #e0e0e0;
+            font-size: 13px;
+        }
+        
+        .rename-menu-item:hover {
+            background: #333;
+            color: #667eea;
+        }
+        
+        .rename-input {
+            background: #1a1a1a;
+            border: 1px solid #667eea;
+            color: #e0e0e0;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧栏：项目结构 -->
+        <div class="left-sidebar">
+            <div class="sidebar-header">
+                <h3>🎬 项目管理</h3>
+                <button class="new-project-btn" onclick="createProject()">+ 创建新项目</button>
+            </div>
+            <div class="project-list" id="projectList">
+                <!-- 项目列表动态生成 -->
+            </div>
+            
+            <!-- 上传素材区域 -->
+            <div class="upload-section">
+                <h5>📁 上传素材</h5>
+                <div class="upload-area" onclick="triggerFileUpload()" ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)">
+                    <div class="upload-icon">+</div>
+                    <div class="upload-text">点击或拖拽</div>
+                </div>
+                <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display:none" onchange="handleFileUpload(event)">
+            </div>
+        </div>
+        
+        <!-- 中间栏：控制面板 -->
+        <div class="main-content">
+            <div class="control-tabs">
+                <div class="control-tab active" onclick="switchMainTab('agent')">Agent控制</div>
+                <div class="control-tab" onclick="switchMainTab('model')">模型生成</div>
+                <div class="control-tab" onclick="switchMainTab('assets')">素材管理</div>
+            </div>
+            
+            <div class="control-panel">
+                <!-- Agent控制区域 -->
+                <div id="agent-panel" class="panel-section active">
+                    <div class="sub-tabs">
+                        <div class="sub-tab active" onclick="switchSubTab('agent', 'story')">故事分析</div>
+                        <div class="sub-tab" onclick="switchSubTab('agent', 'storyboard')">分镜脚本</div>
+                        <div class="sub-tab" onclick="switchSubTab('agent', 'character')">角色设计</div>
+                        <div class="sub-tab" onclick="switchSubTab('agent', 'scene')">场景设计</div>
+                    </div>
+                    
+                    <!-- 故事分析 -->
+                    <div id="agent-story" class="agent-content active">
+                        <div class="form-group">
+                            <label>故事内容</label>
+                            <textarea id="storyInput" placeholder="输入你的故事创意..."></textarea>
+                        </div>
+                        <button class="btn" onclick="executeAgent('story')">执行故事分析</button>
+                        <div class="result-display" id="storyResult" style="display:none;">
+                            <pre></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- 分镜脚本 -->
+                    <div id="agent-storyboard" class="agent-content" style="display:none;">
+                        <div class="form-group">
+                            <label>选择故事分析结果</label>
+                            <select id="storyAnalysisSelect">
+                                <option value="">-- 选择已有的故事分析 --</option>
+                            </select>
+                        </div>
+                        <button class="btn" onclick="executeAgent('storyboard')">生成分镜脚本</button>
+                        <div class="result-display" id="storyboardResult" style="display:none;">
+                            <pre></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- 角色设计 -->
+                    <div id="agent-character" class="agent-content" style="display:none;">
+                        <div class="form-group">
+                            <label>选择故事分析结果</label>
+                            <select id="storyAnalysisForCharacter">
+                                <option value="">-- 选择已有的故事分析 --</option>
+                            </select>
+                        </div>
+                        <button class="btn" onclick="executeAgent('character')">设计角色</button>
+                        <div class="result-display" id="characterResult" style="display:none;">
+                            <pre></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- 场景设计 -->
+                    <div id="agent-scene" class="agent-content" style="display:none;">
+                        <p style="color: #666;">场景设计Agent开发中...</p>
+                    </div>
+                </div>
+                
+                <!-- 模型生成区域 -->
+                <div id="model-panel" class="panel-section">
+                    <div class="sub-tabs">
+                        <div class="sub-tab active" onclick="switchSubTab('model', 't2i')">文生图</div>
+                        <div class="sub-tab" onclick="switchSubTab('model', 'i2v')">图生视频</div>
+                        <div class="sub-tab" onclick="switchSubTab('model', 't2v')">文生视频</div>
+                        <div class="sub-tab" onclick="switchSubTab('model', 'kf')">首尾帧</div>
+                        <div class="sub-tab" onclick="switchSubTab('model', 'edit')">图片编辑</div>
+                    </div>
+                    
+                    <!-- 文生图 -->
+                    <div id="model-t2i" class="model-content active">
+                        <div class="form-group">
+                            <label>Prompt</label>
+                            <textarea id="t2i-prompt" placeholder="描述你想生成的图像..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Negative Prompt</label>
+                            <input type="text" id="t2i-negative" placeholder="不希望出现的内容..." />
+                        </div>
+                        <div class="param-row">
+                            <div class="param-col">
+                                <label>分辨率</label>
+                                <select id="t2i-size">
+                                    <option value="1920*1080" selected>1920×1080 (16:9)</option>
+                                    <option value="1080*1920">1080×1920 (9:16)</option>
+                                    <option value="1440*1440">1440×1440 (1:1)</option>
+                                    <option value="1632*1248">1632×1248 (4:3)</option>
+                                    <option value="1248*1632">1248×1632 (3:4)</option>
+                                </select>
+                            </div>
+                            <div class="param-col">
+                                <label>风格</label>
+                                <select id="t2i-style">
+                                    <option value="auto" selected>自动</option>
+                                    <option value="realistic">写实</option>
+                                    <option value="cartoon">卡通</option>
+                                    <option value="anime">动漫</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn" onclick="generateContent('text-to-image')">生成图像</button>
+                    </div>
+                    
+                    <!-- 图生视频 -->
+                    <div id="model-i2v" class="model-content" style="display:none;">
+                        <div class="form-group">
+                            <label>选择图像</label>
+                            <select id="i2v-image">
+                                <option value="">-- 选择项目中的图像 --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>动态描述</label>
+                            <textarea id="i2v-prompt" placeholder="描述动态效果..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Negative Prompt</label>
+                            <input type="text" id="i2v-negative" placeholder="不希望出现的内容..." />
+                        </div>
+                        <div class="param-row">
+                            <div class="param-col">
+                                <label>分辨率</label>
+                                <select id="i2v-resolution">
+                                    <option value="1280*720" selected>1280×720 (16:9)</option>
+                                    <option value="1920*1080">1920×1080 (16:9)</option>
+                                    <option value="720*1280">720×1280 (9:16)</option>
+                                </select>
+                            </div>
+                            <div class="param-col">
+                                <label>时长(秒)</label>
+                                <select id="i2v-duration">
+                                    <option value="5" selected>5秒</option>
+                                    <option value="10">10秒</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn" onclick="generateContent('image-to-video')">生成视频</button>
+                    </div>
+                    
+                    <!-- 文生视频 -->
+                    <div id="model-t2v" class="model-content" style="display:none;">
+                        <div class="form-group">
+                            <label>选择模型</label>
+                            <div class="model-selector">
+                                <div class="model-option selected" onclick="selectModel('t2v', 'wanx-t2v-plus', this); updateT2VResolutions('online')">
+                                    通义万相 Plus
+                                </div>
+                                <div class="model-option" onclick="selectModel('t2v', 'local-t2v', this); updateT2VResolutions('local')">
+                                    本地模型
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Prompt</label>
+                            <textarea id="t2v-prompt" placeholder="描述你想生成的视频..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Negative Prompt</label>
+                            <input type="text" id="t2v-negative" placeholder="不希望出现的内容..." />
+                        </div>
+                        <div class="param-row">
+                            <div class="param-col">
+                                <label>分辨率</label>
+                                <select id="t2v-resolution">
+                                    <option value="1920*1088" selected>1920×1088 (16:9)</option>
+                                    <option value="1088*1920">1088×1920 (9:16)</option>
+                                    <option value="1280*704">1280×704 (16:9)</option>
+                                    <option value="1024*1024">1024×1024 (1:1)</option>
+                                    <option value="768*1344">768×1344 (9:16)</option>
+                                    <option value="1344*768">1344×768 (16:9)</option>
+                                </select>
+                            </div>
+                            <div class="param-col">
+                                <label>时长(秒)</label>
+                                <select id="t2v-duration">
+                                    <option value="5" selected>5秒</option>
+                                    <option value="10">10秒</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="param-row">
+                            <div class="param-col">
+                                <label>风格</label>
+                                <select id="t2v-style">
+                                    <option value="realistic" selected>写实</option>
+                                    <option value="cartoon">卡通</option>
+                                    <option value="anime">动漫</option>
+                                </select>
+                            </div>
+                            <div class="param-col">
+                                <label>运动强度</label>
+                                <select id="t2v-motion">
+                                    <option value="0.3">低 (0.3)</option>
+                                    <option value="0.5" selected>中 (0.5)</option>
+                                    <option value="0.7">高 (0.7)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn" onclick="generateContent('text-to-video')">生成视频</button>
+                    </div>
+                    
+                    <!-- 首尾帧 -->
+                    <div id="model-kf" class="model-content" style="display:none;">
+                        <div class="form-group">
+                            <label>首帧图像</label>
+                            <select id="kf-first">
+                                <option value="">-- 选择首帧 --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>尾帧图像</label>
+                            <select id="kf-last">
+                                <option value="">-- 选择尾帧 --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>过渡描述</label>
+                            <textarea id="kf-prompt" placeholder="描述过渡效果..."></textarea>
+                        </div>
+                        <button class="btn" onclick="generateContent('keyframe-video')">生成视频</button>
+                    </div>
+                    
+                    <!-- 图片编辑 -->
+                    <div id="model-edit" class="model-content" style="display:none;">
+                        <div class="form-group">
+                            <label>选择图像</label>
+                            <select id="edit-image">
+                                <option value="">-- 选择要编辑的图像 --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>编辑指令</label>
+                            <textarea id="edit-instruction" placeholder="描述编辑需求..."></textarea>
+                        </div>
+                        <button class="btn" onclick="generateContent('image-edit')">编辑图像</button>
+                    </div>
+                </div>
+                
+                <!-- 素材管理区域 -->
+                <div id="assets-panel" class="panel-section">
+                    <div class="assets-grid" id="assetsGrid">
+                        <div class="assets-empty">
+                            请选择项目查看素材
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧栏：预览面板 -->
+        <div class="right-sidebar">
+            <div class="preview-header">
+                <h3>预览</h3>
+            </div>
+            <div class="preview-content" id="previewContent">
+                <div class="preview-empty">
+                    点击左侧文件或生成内容后预览
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <span class="status-text" id="statusText">就绪</span>
+        <span class="status-project" id="statusProject">未选择项目</span>
+    </div>
+    
+    <script>
+        let currentProject = null;
+        let selectedModels = {
+            't2v': 'wanx-t2v-plus'
+        };
+        
+        // 初始化
+        window.onload = function() {
+            loadProjects();
+        };
+        
+        // 加载项目列表
+        function loadProjects() {
+            fetch('/api/projects')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const projectList = document.getElementById('projectList');
+                        projectList.innerHTML = '';
+                        
+                        data.projects.forEach(project => {
+                            const projectDiv = createProjectElement(project);
+                            projectList.appendChild(projectDiv);
+                        });
+                    }
+                });
+        }
+        
+        // 创建项目元素
+        function createProjectElement(project) {
+            const div = document.createElement('div');
+            div.className = 'project-item';
+            div.id = `project-${project.id}`;
+            
+            div.innerHTML = `
+                <div class="project-header" onclick="toggleProject('${project.id}')">
+                    <div>
+                        <div class="project-name">${project.name}</div>
+                    </div>
+                    <span class="project-arrow">▶</span>
+                </div>
+                <div class="project-tree" id="tree-${project.id}">
+                    <!-- 项目结构将在展开时加载 -->
+                </div>
+            `;
+            
+            return div;
+        }
+        
+        // 切换项目展开/收起
+        function toggleProject(projectId) {
+            const projectItem = document.getElementById(`project-${projectId}`);
+            const isExpanded = projectItem.classList.contains('expanded');
+            
+            // 收起所有其他项目
+            document.querySelectorAll('.project-item').forEach(item => {
+                item.classList.remove('expanded', 'active');
+            });
+            
+            if (!isExpanded) {
+                // 展开当前项目
+                projectItem.classList.add('expanded', 'active');
+                selectProject(projectId);
+                loadProjectStructure(projectId);
+            }
+        }
+        
+        // 选择项目
+        function selectProject(projectId) {
+            fetch(`/api/projects/${projectId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentProject = data.project;
+                        document.getElementById('statusProject').textContent = `当前项目: ${currentProject.name}`;
+                        loadAvailablePrompts();
+                    }
+                });
+        }
+        
+        // 加载项目结构
+        function loadProjectStructure(projectId) {
+            fetch(`/api/projects/${projectId}/structure`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const treeDiv = document.getElementById(`tree-${projectId}`);
+                        treeDiv.innerHTML = generateTreeHTML(data.structure, projectId);
+                        updateAssetSelectors(data.structure);
+                    }
+                });
+        }
+        
+        // 生成树形结构HTML
+        function generateTreeHTML(structure, projectId) {
+            let html = '';
+            
+            // Assets
+            html += '<div class="tree-folder">📁 素材</div>';
+            if (structure.assets.images.length > 0) {
+                html += `<div class="tree-folder" style="padding-left:12px">🖼 图片 <span class="file-count">(${structure.assets.images.length})</span></div>`;
+                structure.assets.images.forEach(img => {
+                    html += `<div class="tree-file" onclick="previewFile('${projectId}', 'image', 'assets/images/${img}')" oncontextmenu="showRenameMenu(event, '${projectId}', 'assets/images/${img}', '${img}')">${img}</div>`;
+                });
+            }
+            if (structure.assets.videos.length > 0) {
+                html += `<div class="tree-folder" style="padding-left:12px">🎬 视频 <span class="file-count">(${structure.assets.videos.length})</span></div>`;
+                structure.assets.videos.forEach(vid => {
+                    html += `<div class="tree-file" onclick="previewFile('${projectId}', 'video', 'assets/videos/${vid}')" oncontextmenu="showRenameMenu(event, '${projectId}', 'assets/videos/${vid}', '${vid}')">${vid}</div>`;
+                });
+            }
+            
+            // Prompts
+            html += '<div class="tree-folder">📝 Prompts</div>';
+            ['story', 'storyboard', 'characters'].forEach(type => {
+                if (structure.prompts[type].length > 0) {
+                    const typeName = {story: '故事', storyboard: '分镜', characters: '角色'}[type];
+                    html += `<div class="tree-folder" style="padding-left:12px">${typeName} <span class="file-count">(${structure.prompts[type].length})</span></div>`;
+                    structure.prompts[type].forEach(file => {
+                        html += `<div class="tree-file" onclick="previewPrompt('${projectId}', '${type}', '${file}')">${file}</div>`;
+                    });
+                }
+            });
+            
+            // Outputs
+            html += '<div class="tree-folder">📤 输出</div>';
+            if (structure.outputs.references.length > 0) {
+                html += `<div class="tree-folder" style="padding-left:12px">参考图 <span class="file-count">(${structure.outputs.references.length})</span></div>`;
+                structure.outputs.references.forEach(img => {
+                    html += `<div class="tree-file" onclick="previewFile('${projectId}', 'image', 'outputs/references/${img}')" oncontextmenu="showRenameMenu(event, '${projectId}', 'outputs/references/${img}', '${img}')">${img}</div>`;
+                });
+            }
+            if (structure.outputs.videos.length > 0) {
+                html += `<div class="tree-folder" style="padding-left:12px">视频 <span class="file-count">(${structure.outputs.videos.length})</span></div>`;
+                structure.outputs.videos.forEach(vid => {
+                    html += `<div class="tree-file" onclick="previewFile('${projectId}', 'video', 'outputs/videos/${vid}')" oncontextmenu="showRenameMenu(event, '${projectId}', 'outputs/videos/${vid}', '${vid}')">${vid}</div>`;
+                });
+            }
+            
+            return html;
+        }
+        
+        // 预览文件  
+        function previewFile(projectId, type, path) {
+            const previewContent = document.getElementById('previewContent');
+            const fullPath = `/projects/${projectId}/${path}`;
+            
+            console.log(`Previewing file ${type}: ${fullPath}`);
+            
+            if (type === 'image') {
+                previewContent.innerHTML = `
+                    <div class="preview-title">文件预览</div>
+                    <img src="${fullPath}" style="max-width: 100%; border-radius: 4px;" onload="console.log('Image loaded')" onerror="console.error('Image failed to load:', this.src)" />
+                    <div class="preview-meta">路径: ${path}</div>
+                `;
+            } else if (type === 'video') {
+                previewContent.innerHTML = `
+                    <div class="preview-title">文件预览</div>
+                    <video src="${fullPath}" controls style="max-width: 100%; border-radius: 4px;" onloadeddata="console.log('Video loaded')" onerror="console.error('Video failed to load:', this.src)"></video>
+                    <div class="preview-meta">路径: ${path}</div>
+                `;
+            }
+        }
+        
+        // 预览Prompt文件
+        function previewPrompt(projectId, type, filename) {
+            fetch(`/api/projects/${projectId}/file?path=prompts/${type}/${filename}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const previewContent = document.getElementById('previewContent');
+                        previewContent.innerHTML = `
+                            <div class="preview-title">Prompt预览</div>
+                            <div class="preview-meta">${filename}</div>
+                            <pre style="background: #1a1a1a; padding: 15px; border-radius: 4px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-size: 12px;">${JSON.stringify(data.content, null, 2)}</pre>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Preview error:', error);
+                });
+        }
+        
+        // 更新素材选择器
+        function updateAssetSelectors(structure) {
+            // 更新图像选择器
+            const imageSelectors = ['i2v-image', 'edit-image', 'kf-first', 'kf-last'];
+            imageSelectors.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '<option value="">-- 选择图像 --</option>';
+                    structure.assets.images.forEach(img => {
+                        select.innerHTML += `<option value="assets/images/${img}">${img}</option>`;
+                    });
+                    structure.outputs.references.forEach(img => {
+                        select.innerHTML += `<option value="outputs/references/${img}">[输出] ${img}</option>`;
+                    });
+                }
+            });
+        }
+        
+        // 加载可用的prompts
+        function loadAvailablePrompts() {
+            if (!currentProject) return;
+            
+            fetch(`/api/projects/${currentProject.id}/prompts/story`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.prompts.length > 0) {
+                        const selects = ['storyAnalysisSelect', 'storyAnalysisForCharacter'];
+                        selects.forEach(id => {
+                            const select = document.getElementById(id);
+                            if (select) {
+                                select.innerHTML = '<option value="">-- 选择故事分析 --</option>';
+                                data.prompts.forEach(prompt => {
+                                    select.innerHTML += `<option value='${JSON.stringify(prompt.content)}'>${prompt.filename}</option>`;
+                                });
+                            }
+                        });
+                    }
+                });
+        }
+        
+        // 创建新项目
+        function createProject() {
+            const name = prompt('项目名称:');
+            if (!name) return;
+            
+            const description = prompt('项目描述:');
+            
+            fetch('/api/projects', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, description })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadProjects();
+                    setTimeout(() => {
+                        toggleProject(data.project.id);
+                    }, 100);
+                }
+            });
+        }
+        
+        // 切换主标签
+        function switchMainTab(tab) {
+            // 更新标签状态
+            document.querySelectorAll('.control-tab').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // 切换面板
+            document.querySelectorAll('.panel-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(`${tab}-panel`).classList.add('active');
+            
+            // 如果是素材管理面板，加载素材
+            if (tab === 'assets') {
+                loadAssets();
+            }
+        }
+        
+        // 上传相关函数
+        function triggerFileUpload() {
+            if (!currentProject) {
+                alert('请先选择一个项目');
+                return;
+            }
+            document.getElementById('fileInput').click();
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+        
+        function handleFileDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            if (!currentProject) {
+                alert('请先选择一个项目');
+                return;
+            }
+            
+            const files = e.dataTransfer.files;
+            uploadFiles(files);
+        }
+        
+        function handleFileUpload(e) {
+            const files = e.target.files;
+            uploadFiles(files);
+        }
+        
+        function uploadFiles(files) {
+            if (!currentProject || !currentProject.id) {
+                alert('请先选择一个项目');
+                return;
+            }
+            
+            Array.from(files).forEach(file => {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // 判断文件类型
+                const isImage = file.type.startsWith('image/');
+                const isVideo = file.type.startsWith('video/');
+                
+                if (!isImage && !isVideo) {
+                    alert(`不支持的文件类型: ${file.name}`);
+                    return;
+                }
+                
+                formData.append('type', isImage ? 'image' : 'video');
+                
+                document.getElementById('statusText').innerHTML = `上传${file.name}中...<span class="loading"></span>`;
+                
+                fetch(`/api/projects/${currentProject.id}/assets`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('statusText').textContent = '上传成功';
+                        loadAssets(); // 刷新素材列表
+                        loadProjectStructure(currentProject.id); // 刷新项目结构
+                    } else {
+                        document.getElementById('statusText').textContent = `上传失败: ${data.error}`;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('statusText').textContent = `上传错误: ${error}`;
+                });
+            });
+        }
+        
+        // 加载素材
+        function loadAssets() {
+            if (!currentProject) {
+                document.getElementById('assetsGrid').innerHTML = '<div class="assets-empty">请选择项目查看素材</div>';
+                return;
+            }
+            
+            fetch(`/api/projects/${currentProject.id}/structure`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayAssets(data.structure);
+                    }
+                });
+        }
+        
+        function displayAssets(structure) {
+            const grid = document.getElementById('assetsGrid');
+            let html = '';
+            
+            const allAssets = [];
+            
+            // 收集所有素材
+            if (structure.assets.images) {
+                structure.assets.images.forEach(img => {
+                    allAssets.push({ name: img, type: 'image', path: `assets/images/${img}` });
+                });
+            }
+            
+            if (structure.assets.videos) {
+                structure.assets.videos.forEach(vid => {
+                    allAssets.push({ name: vid, type: 'video', path: `assets/videos/${vid}` });
+                });
+            }
+            
+            if (allAssets.length === 0) {
+                grid.innerHTML = '<div class="assets-empty">暂无素材文件</div>';
+                return;
+            }
+            
+            allAssets.forEach(asset => {
+                const icon = asset.type === 'image' ? '🖼️' : '🎬';
+                html += `
+                    <div class="asset-item" onclick="previewAsset('${asset.path}', '${asset.type}')">
+                        <div class="asset-preview">${icon}</div>
+                        <div class="asset-info">
+                            <div class="asset-name">${asset.name}</div>
+                            <div class="asset-type">${asset.type}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+            
+            // 更新图片/视频选择下拉框
+            updateAssetSelectors(structure);
+        }
+        
+        function previewAsset(path, type) {
+            const previewContent = document.getElementById('previewContent');
+            const fullPath = `/projects/${currentProject.id}/${path}`;
+            
+            console.log(`Previewing ${type}: ${fullPath}`); // Debug log
+            
+            if (type === 'image') {
+                previewContent.innerHTML = `
+                    <div class="preview-title">素材预览</div>
+                    <img src="${fullPath}" style="max-width: 100%; border-radius: 4px;" onload="console.log('Image loaded')" onerror="console.error('Image failed to load:', this.src)" />
+                    <div class="preview-meta">路径: ${path}</div>
+                `;
+            } else if (type === 'video') {
+                previewContent.innerHTML = `
+                    <div class="preview-title">素材预览</div>
+                    <video src="${fullPath}" controls style="max-width: 100%; border-radius: 4px;" onloadeddata="console.log('Video loaded')" onerror="console.error('Video failed to load:', this.src)"></video>
+                    <div class="preview-meta">路径: ${path}</div>
+                `;
+            }
+        }
+        
+        // 更新素材选择器
+        function updateAssetSelectors(structure) {
+            // 更新图生视频的图片选择
+            const i2vSelect = document.getElementById('i2v-image');
+            if (i2vSelect) {
+                i2vSelect.innerHTML = '<option value="">-- 选择项目中的图像 --</option>';
+                
+                if (structure.assets.images) {
+                    structure.assets.images.forEach(img => {
+                        const option = document.createElement('option');
+                        option.value = `assets/images/${img}`;
+                        option.textContent = img;
+                        i2vSelect.appendChild(option);
+                    });
+                }
+                
+                // 也添加输出的参考图
+                if (structure.outputs.references) {
+                    structure.outputs.references.forEach(img => {
+                        const option = document.createElement('option');
+                        option.value = `outputs/references/${img}`;
+                        option.textContent = `[输出] ${img}`;
+                        i2vSelect.appendChild(option);
+                    });
+                }
+            }
+            
+            // 更新首尾帧的图片选择
+            const kfFirstSelect = document.getElementById('kf-first');
+            const kfLastSelect = document.getElementById('kf-last');
+            
+            if (kfFirstSelect && kfLastSelect) {
+                kfFirstSelect.innerHTML = '<option value="">-- 选择首帧 --</option>';
+                kfLastSelect.innerHTML = '<option value="">-- 选择尾帧 --</option>';
+                
+                if (structure.assets.images) {
+                    structure.assets.images.forEach(img => {
+                        const firstOption = document.createElement('option');
+                        firstOption.value = `assets/images/${img}`;
+                        firstOption.textContent = img;
+                        kfFirstSelect.appendChild(firstOption);
+                        
+                        const lastOption = document.createElement('option');
+                        lastOption.value = `assets/images/${img}`;
+                        lastOption.textContent = img;
+                        kfLastSelect.appendChild(lastOption);
+                    });
+                }
+                
+                if (structure.outputs.references) {
+                    structure.outputs.references.forEach(img => {
+                        const firstOption = document.createElement('option');
+                        firstOption.value = `outputs/references/${img}`;
+                        firstOption.textContent = `[输出] ${img}`;
+                        kfFirstSelect.appendChild(firstOption);
+                        
+                        const lastOption = document.createElement('option');
+                        lastOption.value = `outputs/references/${img}`;
+                        lastOption.textContent = `[输出] ${img}`;
+                        kfLastSelect.appendChild(lastOption);
+                    });
+                }
+            }
+            
+            // 更新图片编辑的选择
+            const editSelect = document.getElementById('edit-image');
+            if (editSelect) {
+                editSelect.innerHTML = '<option value="">-- 选择要编辑的图像 --</option>';
+                
+                if (structure.assets.images) {
+                    structure.assets.images.forEach(img => {
+                        const option = document.createElement('option');
+                        option.value = `assets/images/${img}`;
+                        option.textContent = img;
+                        editSelect.appendChild(option);
+                    });
+                }
+                
+                if (structure.outputs.references) {
+                    structure.outputs.references.forEach(img => {
+                        const option = document.createElement('option');
+                        option.value = `outputs/references/${img}`;
+                        option.textContent = `[输出] ${img}`;
+                        editSelect.appendChild(option);
+                    });
+                }
+            }
+        }
+        
+        // 根据模型类型更新文生视频分辨率选项
+        function updateT2VResolutions(modelType) {
+            const resolutionSelect = document.getElementById('t2v-resolution');
+            
+            if (modelType === 'local') {
+                // 本地模型：64的倍数
+                resolutionSelect.innerHTML = `
+                    <option value="1024*1024" selected>1024×1024 (1:1)</option>
+                    <option value="1280*704">1280×704 (16:9)</option>
+                    <option value="704*1280">704×1280 (9:16)</option>
+                    <option value="1152*896">1152×896 (4:3)</option>
+                    <option value="896*1152">896×1152 (3:4)</option>
+                    <option value="1344*768">1344×768 (7:4)</option>
+                    <option value="768*1344">768×1344 (4:7)</option>
+                `;
+            } else {
+                // 在线模型：通义万相的标准分辨率
+                resolutionSelect.innerHTML = `
+                    <option value="1920*1080" selected>1920×1080 (16:9)</option>
+                    <option value="1080*1920">1080×1920 (9:16)</option>
+                    <option value="1280*720">1280×720 (16:9)</option>
+                    <option value="720*1280">720×1280 (9:16)</option>
+                    <option value="1024*1024">1024×1024 (1:1)</option>
+                `;
+            }
+        }
+        
+        // 显示重命名菜单
+        function showRenameMenu(event, projectId, filePath, fileName) {
+            event.preventDefault();
+            
+            // 移除已存在的菜单
+            const existingMenu = document.querySelector('.rename-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+            
+            // 创建菜单
+            const menu = document.createElement('div');
+            menu.className = 'rename-menu';
+            menu.style.left = event.pageX + 'px';
+            menu.style.top = event.pageY + 'px';
+            
+            const renameItem = document.createElement('div');
+            renameItem.className = 'rename-menu-item';
+            renameItem.textContent = '重命名';
+            renameItem.onclick = () => {
+                menu.remove();
+                startRename(projectId, filePath, fileName);
+            };
+            
+            const deleteItem = document.createElement('div');
+            deleteItem.className = 'rename-menu-item';
+            deleteItem.textContent = '删除';
+            deleteItem.style.color = '#ff6b6b';
+            deleteItem.onclick = () => {
+                menu.remove();
+                startDelete(projectId, filePath, fileName);
+            };
+            
+            menu.appendChild(renameItem);
+            menu.appendChild(deleteItem);
+            document.body.appendChild(menu);
+            
+            // 点击其他地方关闭菜单
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu() {
+                    menu.remove();
+                    document.removeEventListener('click', closeMenu);
+                });
+            }, 10);
+        }
+        
+        // 开始重命名
+        function startRename(projectId, filePath, fileName) {
+            const newName = prompt('请输入新的文件名：', fileName);
+            if (newName && newName !== fileName && newName.trim() !== '') {
+                renameFile(projectId, filePath, newName.trim());
+            }
+        }
+        
+        // 重命名文件
+        function renameFile(projectId, oldPath, newName) {
+            document.getElementById('statusText').innerHTML = `重命名文件中...<span class="loading"></span>`;
+            
+            fetch(`/api/projects/${projectId}/rename`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    old_path: oldPath,
+                    new_name: newName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('statusText').textContent = '重命名成功';
+                    loadProjectStructure(projectId); // 刷新项目结构
+                    if (document.getElementById('assets-panel').classList.contains('active')) {
+                        loadAssets(); // 刷新素材面板
+                    }
+                } else {
+                    alert('重命名失败: ' + data.error);
+                    document.getElementById('statusText').textContent = '重命名失败';
+                }
+            })
+            .catch(error => {
+                alert('重命名错误: ' + error);
+                document.getElementById('statusText').textContent = '重命名错误';
+            });
+        }
+        
+        // 开始删除
+        function startDelete(projectId, filePath, fileName) {
+            if (confirm(`确定要删除文件 "${fileName}" 吗？此操作不可撤销。`)) {
+                deleteFile(projectId, filePath, fileName);
+            }
+        }
+        
+        // 删除文件
+        function deleteFile(projectId, filePath, fileName) {
+            document.getElementById('statusText').innerHTML = `删除文件中...<span class="loading"></span>`;
+            
+            fetch(`/api/projects/${projectId}/delete`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    file_path: filePath
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('statusText').textContent = '删除成功';
+                    loadProjectStructure(projectId); // 刷新项目结构
+                    if (document.getElementById('assets-panel').classList.contains('active')) {
+                        loadAssets(); // 刷新素材面板
+                    }
+                    // 如果当前预览的是被删除的文件，清空预览
+                    const previewContent = document.getElementById('previewContent');
+                    if (previewContent.innerHTML.includes(fileName)) {
+                        previewContent.innerHTML = '<div class="preview-empty">文件已删除</div>';
+                    }
+                } else {
+                    alert('删除失败: ' + data.error);
+                    document.getElementById('statusText').textContent = '删除失败';
+                }
+            })
+            .catch(error => {
+                alert('删除错误: ' + error);
+                document.getElementById('statusText').textContent = '删除错误';
+            });
+        }
+        
+        // 切换子标签
+        function switchSubTab(type, tab) {
+            // 更新标签状态
+            const container = event.currentTarget.parentElement;
+            container.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // 切换内容
+            const contentClass = type === 'agent' ? 'agent-content' : 'model-content';
+            document.querySelectorAll(`.${contentClass}`).forEach(c => c.style.display = 'none');
+            document.getElementById(`${type}-${tab}`).style.display = 'block';
+        }
+        
+        // 选择模型
+        function selectModel(type, model, element) {
+            selectedModels[type] = model;
+            element.parentElement.querySelectorAll('.model-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            element.classList.add('selected');
+        }
+        
+        // 执行Agent
+        function executeAgent(agentType) {
+            if (!currentProject) {
+                alert('请先选择一个项目');
+                return;
+            }
+            
+            let inputData = {};
+            
+            if (agentType === 'story') {
+                const story = document.getElementById('storyInput').value;
+                if (!story) {
+                    alert('请输入故事内容');
+                    return;
+                }
+                inputData = { story };
+            } else if (agentType === 'storyboard') {
+                const select = document.getElementById('storyAnalysisSelect');
+                if (!select.value) {
+                    alert('请选择故事分析结果');
+                    return;
+                }
+                inputData = { story_analysis: JSON.parse(select.value) };
+            } else if (agentType === 'character') {
+                const select = document.getElementById('storyAnalysisForCharacter');
+                if (!select.value) {
+                    alert('请选择故事分析结果');
+                    return;
+                }
+                inputData = { story_analysis: JSON.parse(select.value) };
+            }
+            
+            document.getElementById('statusText').innerHTML = `执行${agentType} Agent中...<span class="loading"></span>`;
+            
+            fetch(`/api/agents/${agentType}/execute`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    project_id: currentProject.id,
+                    input_data: inputData,
+                    save_result: true
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('statusText').textContent = 'Agent执行成功';
+                    
+                    // 显示结果
+                    const resultDiv = document.getElementById(`${agentType}Result`);
+                    resultDiv.style.display = 'block';
+                    resultDiv.querySelector('pre').textContent = JSON.stringify(data.result, null, 2);
+                    
+                    // 在预览面板显示
+                    const previewContent = document.getElementById('previewContent');
+                    previewContent.innerHTML = `
+                        <div class="preview-title">Agent执行结果</div>
+                        <div class="preview-meta">${agentType} Agent</div>
+                        <div class="preview-json">${JSON.stringify(data.result, null, 2)}</div>
+                    `;
+                    
+                    // 刷新项目结构
+                    loadProjectStructure(currentProject.id);
+                    loadAvailablePrompts();
+                } else {
+                    alert('执行失败: ' + data.error);
+                    document.getElementById('statusText').textContent = '执行失败';
+                }
+            });
+        }
+        
+        // 生成内容
+        function generateContent(taskType) {
+            if (!currentProject) {
+                alert('请先选择一个项目');
+                return;
+            }
+            
+            let params = {
+                project_id: currentProject.id
+            };
+            
+            if (taskType === 'text-to-image') {
+                params.prompt = document.getElementById('t2i-prompt').value;
+                params.negative_prompt = document.getElementById('t2i-negative').value;
+                params.size = document.getElementById('t2i-size').value;
+                params.style = document.getElementById('t2i-style').value;
+                if (!params.prompt) {
+                    alert('请输入Prompt');
+                    return;
+                }
+            } else if (taskType === 'image-to-video') {
+                params.image_path = document.getElementById('i2v-image').value;
+                params.prompt = document.getElementById('i2v-prompt').value;
+                params.negative_prompt = document.getElementById('i2v-negative').value;
+                params.resolution = document.getElementById('i2v-resolution').value;
+                params.duration = parseInt(document.getElementById('i2v-duration').value);
+                params.fps = 30;
+                if (!params.image_path) {
+                    alert('请选择图像');
+                    return;
+                }
+            } else if (taskType === 'text-to-video') {
+                params.model = selectedModels['t2v'];
+                params.prompt = document.getElementById('t2v-prompt').value;
+                params.negative_prompt = document.getElementById('t2v-negative').value;
+                params.resolution = document.getElementById('t2v-resolution').value;
+                params.duration = parseInt(document.getElementById('t2v-duration').value);
+                params.fps = 30;
+                params.style = document.getElementById('t2v-style').value;
+                params.motion_strength = parseFloat(document.getElementById('t2v-motion').value);
+                if (!params.prompt) {
+                    alert('请输入Prompt');
+                    return;
+                }
+            } else if (taskType === 'keyframe-video') {
+                params.first_frame_path = document.getElementById('kf-first').value;
+                params.last_frame_path = document.getElementById('kf-last').value;
+                params.prompt = document.getElementById('kf-prompt').value;
+                if (!params.first_frame_path || !params.last_frame_path) {
+                    alert('请选择首尾帧图像');
+                    return;
+                }
+            } else if (taskType === 'image-edit') {
+                params.image_path = document.getElementById('edit-image').value;
+                params.edit_instruction = document.getElementById('edit-instruction').value;
+                if (!params.image_path || !params.edit_instruction) {
+                    alert('请选择图像并输入编辑指令');
+                    return;
+                }
+            }
+            
+            document.getElementById('statusText').innerHTML = `生成${taskType}中...<span class="loading"></span>`;
+            
+            fetch(`/api/generate/${taskType}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(params)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('statusText').textContent = '生成成功';
+                    
+                    // 预览生成的内容
+                    const previewContent = document.getElementById('previewContent');
+                    if (taskType.includes('image') || taskType === 'text-to-image') {
+                        previewContent.innerHTML = `
+                            <div class="preview-title">生成结果</div>
+                            <div class="preview-meta">模型: ${data.model_used}</div>
+                            <img src="/${data.result_path}" class="preview-image" />
+                        `;
+                    } else {
+                        previewContent.innerHTML = `
+                            <div class="preview-title">生成结果</div>
+                            <div class="preview-meta">模型: ${data.model_used}</div>
+                            <video src="/${data.result_path}" class="preview-video" controls></video>
+                        `;
+                    }
+                    
+                    // 刷新项目结构
+                    loadProjectStructure(currentProject.id);
+                } else {
+                    alert('生成失败: ' + data.error);
+                    document.getElementById('statusText').textContent = '生成失败';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

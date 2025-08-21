@@ -1,275 +1,174 @@
-# 通义千问视频生成工具集
+# AI视频生成工作室
 
-基于阿里云通义千问API的AI视频生成工具集，支持文生图、图生视频、文生视频、首尾帧视频、图片编辑等多种生成模式。
+一个基于Agent架构的智能视频生成平台，支持从故事创意到视频产出的完整工作流。
 
-## 🚀 快速启动
+## 功能特性
 
-### 1. 安装依赖
+### 📖 智能Agent系统
+- **故事分析Agent**: 分析故事创意，提取关键元素
+- **分镜脚本Agent**: 基于故事分析生成详细分镜脚本
+- **角色设计Agent**: 自动设计角色形象和特征
 
+### 🎬 多模型视频生成
+- **文生图**: 通义万相文生图模型 (wanx-v1)
+- **图生视频**: 通义万相图生视频Flash模型
+- **文生视频**: 
+  - 通义万相文生视频Plus模型
+  - 本地部署T2V模型支持
+- **首尾帧视频**: 通义万相首尾帧插值视频生成
+- **图片编辑**: AI图片编辑和优化
+
+### 🗂️ 项目管理
+- 完整的项目文件组织结构
+- 素材管理（图片、视频、音频）
+- 生成历史记录和版本控制
+- 文件预览和管理功能
+
+### 🎨 现代化Web界面
+- 响应式三栏布局设计
+- 拖拽上传文件支持
+- 实时预览功能
+- 右键菜单文件操作
+
+## 项目架构
+
+```
+video_tool_mix/
+├── agents/           # AI Agent模块
+│   ├── story_agent.py        # 故事分析
+│   ├── storyboard_agent.py   # 分镜脚本
+│   └── character_agent.py    # 角色设计
+├── api/             # 视频生成API
+│   ├── qwen_t2i_flash.py     # 文生图API
+│   ├── qwen_i2v_flash.py     # 图生视频API
+│   ├── qwen_t2v_plus.py      # 文生视频API
+│   ├── qwen_local_t2v.py     # 本地T2V API
+│   ├── qwen_keyframe_plus.py # 首尾帧API
+│   └── qwen_image_edit.py    # 图片编辑API
+├── llm/             # LLM提供商
+│   ├── claude_llm.py         # Claude接口
+│   └── free_llm.py           # 免费LLM接口
+├── services/        # 核心服务
+│   └── project_manager.py    # 项目管理
+├── web/             # Web界面
+│   ├── app.py               # Flask主应用
+│   └── templates/           # HTML模板
+└── projects/        # 项目数据存储
+```
+
+## 快速开始
+
+### 环境要求
+- Python 3.8+
+- Flask
+- asyncio
+- aiohttp
+- 通义千问API密钥
+
+### 安装依赖
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 设置API密钥（可选）
-
+### 配置API密钥
+1. 复制环境变量示例文件：
 ```bash
-export DASHSCOPE_API_KEY="sk-c4af8d8ed01d43a587eda9b8c3b32058"
+cp .env.example .env
 ```
 
-注：代码中已配置默认API密钥，可直接使用
+2. 编辑 `.env` 文件，添加你的API密钥：
+```
+DASHSCOPE_API_KEY=your_dashscope_api_key
+ANTHROPIC_API_KEY=your_claude_api_key  # 可选
+```
 
-### 3. 启动Web服务
-
+### 启动应用
 ```bash
-python app.py
+python web/app.py
 ```
 
-服务将在 **http://localhost:30001** 启动
+应用将在 `http://localhost:30001` 启动。
 
-## 📁 项目结构
+## 使用指南
 
-```
-video_tool_mix/
-├── app.py                    # Flask Web服务主文件
-├── requirements.txt          # 项目依赖
-├── templates/               # HTML模板
-│   └── index.html          # Web界面
-├── static/                 # 静态资源
-├── assets/                 # 素材文件夹
-│   ├── images/            # 图片素材
-│   └── videos/            # 视频素材
-├── output/                 # 输出文件夹
-│   ├── keyframe_plus/     # 首尾帧视频输出
-│   └── image_edit/       # 图片编辑输出
-├── uploads/               # 上传文件夹
-└── test_output/           # 测试输出
-```
+### 1. 创建项目
+- 在左侧面板点击"创建新项目"
+- 输入项目名称和描述
 
-## 🎯 功能模块
+### 2. 上传素材
+- 拖拽文件到上传区域
+- 或点击上传区域选择文件
+- 支持图片和视频格式
 
-### 1. 文生图 (Text to Image)
-- **文件:** `qwen_t2i_flash.py`
-- **API端点:** `/api/text-to-image`
-- **模型:** wanx-v1
-- **生成时间:** 10-30秒
+### 3. 使用Agent
+- **故事分析**: 输入故事创意，AI自动分析关键要素
+- **分镜脚本**: 基于故事分析生成详细分镜
+- **角色设计**: 自动设计角色形象
 
-### 2. 图生视频 (Image to Video)
-- **文件:** `qwen_i2v_flash.py`
-- **API端点:** `/api/image-to-video`
-- **模型:** wanx-i2v-flash
-- **生成时间:** 3-5分钟
+### 4. 生成视频内容
+- **文生图**: 根据提示词生成图片
+- **图生视频**: 将图片转换为视频
+- **文生视频**: 直接从文本生成视频
+- **图片编辑**: AI编辑和优化图片
 
-### 3. 文生视频 (Text to Video)
-- **文件:** `qwen_t2v_plus.py`
-- **API端点:** `/api/text-to-video`
-- **模型:** wanx2.0-t2v-plus
-- **生成时间:** 3-5分钟
+### 5. 文件管理
+- 右键点击文件进行重命名或删除
+- 在右侧预览面板查看内容
+- 所有生成内容自动保存到项目中
 
-### 4. 首尾帧视频 (Keyframe to Video)
-- **文件:** `qwen_keyframe_plus.py`
-- **API端点:** `/api/keyframe-to-video`
-- **模型:** wanx2.1-kf2v-plus
-- **生成时间:** 7-10分钟
-- **特点:** 支持完整流程（提交→轮询→下载）
+## 本地模型支持
 
-### 5. 图片编辑 (Image Edit) ⭐新功能
-- **文件:** `qwen_image_edit.py`
-- **API端点:** `/api/image-edit`
-- **模型:** qwen-image-edit
-- **生成时间:** 1-2分钟
-- **特点:** 基于文本指令编辑图片，支持风格转换、细节修改等
+平台支持本地部署的T2V模型，默认连接到 `http://192.168.3.4:8888`。
 
-## 🔧 独立测试各模块
+本地模型特点：
+- 支持64倍数分辨率（自动调整）
+- 可配置帧数和帧率
+- 支持自定义分辨率
 
-### 测试首尾帧视频生成
+## API接口
+
+### Agent执行
 ```bash
-python qwen_keyframe_plus.py
-```
-
-### 测试文生图
-```bash
-python qwen_t2i_flash.py
-```
-
-### 测试图生视频
-```bash
-python qwen_i2v_flash.py
-```
-
-### 测试文生视频
-```bash
-python qwen_t2v_plus.py
-```
-
-### 测试图片编辑
-```bash
-python qwen_image_edit.py
-```
-
-## 📝 API调用示例
-
-### 首尾帧视频生成（新功能）
-```python
-import requests
-
-url = "http://localhost:30001/api/keyframe-to-video"
-data = {
-    "first_frame_path": "assets/images/first.png",
-    "last_frame_path": "assets/images/last.png",
-    "prompt": "流畅的过渡动画",
-    "resolution": "720P",
-    "prompt_extend": True
-}
-
-response = requests.post(url, json=data)
-result = response.json()
-```
-
-### 文生图
-```python
-url = "http://localhost:30001/api/text-to-image"
-data = {
-    "prompt": "一只可爱的小猫",
-    "negative_prompt": "模糊",
-    "size": "1024*1024",
-    "style": "auto",
-    "n": 1
+POST /api/agents/{agent_type}/execute
+{
+    "project_id": "项目ID",
+    "input_data": {...},
+    "save_result": true
 }
 ```
 
-### 图生视频
-```python
-url = "http://localhost:30001/api/image-to-video"
-data = {
-    "image_path": "assets/images/cat.png",
-    "prompt": "让画面动起来",
-    "duration": 5,
-    "fps": 30,
-    "resolution": "1280*720"
-}
-```
-
-### 文生视频
-```python
-url = "http://localhost:30001/api/text-to-video"
-data = {
-    "prompt": "一只猫在花园里奔跑",
-    "duration": 5,
-    "style": "realistic",
-    "motion_strength": 0.7,
-    "resolution": "1280*720"
-}
-```
-
-### 图片编辑
-```python
-url = "http://localhost:30001/api/image-edit"
-data = {
-    "image_path": "assets/images/cat.png",
-    "edit_instruction": "给小猫戴一个红色圣诞帽",
-    "negative_prompt": "模糊，低质量",
-    "watermark": False
-}
-```
-
-## ⚙️ 配置说明
-
-### API密钥配置
-- 环境变量: `DASHSCOPE_API_KEY`
-- 默认值: `sk-c4af8d8ed01d43a587eda9b8c3b32058`（已配置）
-
-### 端口配置
-- 默认端口: **30001**
-- 修改位置: `app.py` 第414行
-
-### 输出目录
-- 图片: `output/`
-- 视频: `output/keyframe_plus/`
-- 图片编辑: `output/image_edit/`
-- 素材: `assets/`
-
-## 🧪 测试工具
-
-- `test.py` - 首尾帧视频完整测试
-- `quick_test.py` - 快速API连通性测试
-- `check_task.py` - 任务状态查询工具
-- `test_keyframe_integration.py` - 集成测试
-
-## 📊 任务处理流程
-
-1. **提交任务** - 将请求发送到API
-2. **获取任务ID** - API返回任务标识
-3. **轮询状态** - 每30秒查询一次
-4. **下载结果** - 任务完成后下载视频
-5. **保存到本地** - 自动保存到output目录
-
-## ⏱️ 生成时间参考
-
-| 功能 | 时间 | 分辨率 |
-|------|------|--------|
-| 文生图 | 10-30秒 | 1024×1024 |
-| 图生视频 | 3-5分钟 | 1280×720 |
-| 文生视频 | 3-5分钟 | 1280×720 |
-| 首尾帧视频 | 7-10分钟 | 720P/1080P |
-| 图片编辑 | 1-2分钟 | 1024×1024 |
-
-## 🔍 常见问题
-
-### 1. API连接超时
-- 检查网络连接
-- 确认API密钥有效
-- 可能需要代理设置
-
-### 2. 视频生成失败
-- 检查图片格式（支持PNG/JPG）
-- 确保图片文件存在
-- 分辨率使用720P或1080P
-
-### 3. 端口被占用
+### 内容生成
 ```bash
-# 查看端口占用
-lsof -i:30001
-
-# 修改端口
-# 编辑 app.py 第414行
+POST /api/generate/{task_type}
+{
+    "model": "模型名称",
+    "project_id": "项目ID",
+    "prompt": "提示词",
+    ...
+}
 ```
 
-### 4. 依赖安装失败
-```bash
-# 使用国内镜像
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-```
+## 技术栈
 
-## 💡 使用提示
+- **后端**: Python Flask + AsyncIO
+- **前端**: HTML5 + CSS3 + JavaScript
+- **AI集成**: 通义千问系列模型
+- **LLM**: Claude/通义千问大语言模型
+- **文件存储**: 本地文件系统
 
-1. **首尾帧视频生成**
-   - 选择两张关联图片作为首尾帧
-   - 提示词描述过渡动画效果
-   - 建议使用720P分辨率
-   - 启用提示词扩展获得更好效果
+## 开发计划
 
-2. **文生图优化**
-   - 详细描述场景和风格
-   - 使用负向提示词排除不想要的元素
-   - 可设置seed值获得可重复结果
+- [ ] 场景设计Agent
+- [ ] 视频后处理功能  
+- [ ] 音频生成和编辑
+- [ ] 批量处理支持
+- [ ] Docker部署支持
+- [ ] 更多模型集成
 
-3. **视频生成建议**
-   - 图片质量影响视频效果
-   - 动作幅度通过motion_strength控制
-   - 复杂场景可能需要更长生成时间
+## 贡献
 
-4. **图片编辑技巧**
-   - 使用清晰的编辑指令描述想要的效果
-   - 负向提示词帮助排除不想要的结果
-   - 支持颜色调整、风格转换、添加物体等
-   - 编辑结果会自动保存到素材库
+欢迎提交Issue和Pull Request来改进这个项目。
 
-## 📞 支持
+## 许可证
 
-- API文档: https://help.aliyun.com/zh/dashscope/
-- 百炼平台: https://bailian.console.aliyun.com/
-- 问题反馈: 提交Issue到项目仓库
-
-## 📄 许可
-
-本项目仅供学习和研究使用。
+MIT License
