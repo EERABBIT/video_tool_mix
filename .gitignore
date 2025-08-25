@@ -42,9 +42,8 @@ projects/*
 !projects/.gitkeep
 output/*
 !output/.gitkeep
-assets/videos/*.mp4
-assets/images/*.png
-assets/images/*.jpg
+logs/*
+!logs/.gitkeep
 *.log
 
 # API Keys (安全考虑)
@@ -59,7 +58,7 @@ verify_*.html
 test_api.py
 test_fixes.md
 
-# Large media files (所有视频文件都不上传)
+# Large media files
 *.mp4
 *.avi
 *.mov
@@ -69,7 +68,7 @@ test_fixes.md
 *.wmv
 *.m4v
 
-# 图片文件（如果不想上传）
+# Image files (可选择性上传)
 *.png
 *.jpg
 *.jpeg
@@ -83,8 +82,12 @@ temp/
 
 # Test output directories
 *_test_output/
-*_output/
+qwen_test_output/
 
-# Additional cache files
+# Cache files
 .pytest_cache/
 .coverage
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
