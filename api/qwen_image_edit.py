@@ -19,7 +19,9 @@ class QwenImageEditAPI:
     """通义千问图片编辑API"""
     
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv('DASHSCOPE_API_KEY', "sk-c4af8d8ed01d43a587eda9b8c3b32058")
+        self.api_key = api_key or os.getenv('DASHSCOPE_API_KEY')
+        if not self.api_key:
+            raise ValueError("API key is required. Please set DASHSCOPE_API_KEY in .env file")
         self.base_url = "https://dashscope.aliyuncs.com/api/v1"
         self.model = "qwen-image-edit"
         self.output_dir = Path("./output/image_edit")

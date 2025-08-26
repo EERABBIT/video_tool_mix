@@ -19,7 +19,9 @@ class QwenKeyframePlusAPI:
     """通义万相2.1-首尾帧-Plus模型API"""
     
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv('DASHSCOPE_API_KEY', "sk-c4af8d8ed01d43a587eda9b8c3b32058")
+        self.api_key = api_key or os.getenv('DASHSCOPE_API_KEY')
+        if not self.api_key:
+            raise ValueError("API key is required. Please set DASHSCOPE_API_KEY in .env file")
         self.base_url = "https://dashscope.aliyuncs.com/api/v1"
         self.model = "wanx2.1-kf2v-plus"
         self.output_dir = Path("./output/keyframe_plus")

@@ -6,6 +6,7 @@
 
 import asyncio
 import json
+import os
 import time
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -15,8 +16,10 @@ class QwenAPITester:
     """千问API测试器"""
     
     def __init__(self):
-        # TODO: 请修改为你的实际API密钥
-        self.api_key = "sk-c4af8d8ed01d43a587eda9b8c3b32058"
+        # 从环境变量获取API密钥
+        self.api_key = os.getenv('DASHSCOPE_API_KEY')
+        if not self.api_key:
+            raise ValueError("API key is required. Please set DASHSCOPE_API_KEY in .env file")
         
         # API配置
         self.base_url = "https://dashscope.aliyuncs.com/api/v1"
